@@ -22,7 +22,7 @@
     @if($negocio->processo)
         <div class="rounded-lg bg-blue-50 p-4">
             <p class="text-sm font-medium text-blue-800">Processo associado:</p>
-            <a href="{{ route('processos.edit', $negocio->processo) }}" class="text-blue-600 hover:underline">{{ $negocio->processo->referencia }}</a>
+            <a href="{{ route('processos.show', $negocio->processo) }}" class="text-blue-600 hover:underline">{{ $negocio->processo->referencia }}</a>
         </div>
     @endif
 

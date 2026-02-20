@@ -57,7 +57,7 @@
                     </td>
                     <td class="px-4 py-3 text-slate-600">
                         @if($n->processo)
-                            <a href="{{ route('processos.edit', $n->processo) }}" class="text-blue-600 hover:underline">{{ $n->processo->referencia }}</a>
+                            <a href="{{ route('processos.show', $n->processo) }}" class="text-blue-600 hover:underline">{{ $n->processo->referencia }}</a>
                         @else
                             <span class="text-slate-400">—</span>
                         @endif

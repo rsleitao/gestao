@@ -17,4 +17,11 @@ return [
     'maintenance' => [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
     ],
+
+    /*
+    | Conta fixa CEO: não pode alterar o papel nem desativar (evita perder acesso).
+    | Definir FIXED_CEO_USER_ID (id do user) e/ou FIXED_CEO_EMAIL (email).
+    */
+    'fixed_ceo_user_id' => env('FIXED_CEO_USER_ID') ? (int) env('FIXED_CEO_USER_ID') : null,
+    'fixed_ceo_email' => env('FIXED_CEO_EMAIL'),
 ];
