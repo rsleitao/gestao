@@ -27,4 +27,9 @@ class Requerente extends Model
     {
         return $this->hasMany(Processo::class);
     }
+
+    public function negocios(): HasMany
+    {
+        return $this->hasMany(Negocio::class, 'id_requerente');
+    }
 }

@@ -12,13 +12,26 @@
     @csrf
     @method('PUT')
 
-    <x-input label="Referência" name="referencia" :value="$processo->referencia" required />
+    <div>
+        <label class="mb-1 block text-sm font-medium text-slate-700">Código do processo</label>
+        <p class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 font-mono text-slate-800">{{ $processo->codigo_formatado }}</p>
+        <p class="mt-1 text-xs text-slate-500">Identificador único. Não pode ser alterado.</p>
+    </div>
+    <div>
+        <label class="mb-1 block text-sm font-medium text-slate-700">Data de abertura</label>
+        <p class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-slate-800">{{ $processo->data_abertura->format('d/m/Y') }}</p>
+        <p class="mt-1 text-xs text-slate-500">Data de criação do processo. Não pode ser alterada.</p>
+    </div>
+    <div>
+        <label for="designacao" class="mb-1 block text-sm font-medium text-slate-700">Designação</label>
+        <input type="text" name="designacao" id="designacao" value="{{ old('designacao', $processo->designacao) }}"
+            class="w-full rounded-lg border border-slate-300 px-3 py-2 shadow-sm focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500">
+        <p class="mt-1 text-xs text-slate-500">Gerada automaticamente quando criado a partir de um negócio (Loja - Concelho). Pode ser editada.</p>
+        @error('designacao')
+            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+        @enderror
+    </div>
     <x-select label="Requerente" name="requerente_id" :options="$requerentes->pluck('nome', 'id')->all()" :selected="$processo->requerente_id" required placeholder="Selecione o requerente" />
-    <x-select label="Serviço" name="servico_id" :options="$servicos->pluck('nome', 'id')->all()" :selected="$processo->servico_id" placeholder="Opcional" />
-    <x-select label="Estado" name="estado" :options="array_combine(\App\Models\Processo::ESTADOS, array_map(fn($e) => ucfirst(str_replace('_', ' ', $e)), \App\Models\Processo::ESTADOS))" :selected="$processo->estado" required />
-    <x-input label="Data abertura" name="data_abertura" type="date" :value="$processo->data_abertura->format('Y-m-d')" required />
-    <x-input label="Data limite" name="data_limite" type="date" :value="$processo->data_limite?->format('Y-m-d')" />
-    <x-input label="Data conclusão" name="data_conclusao" type="date" :value="$processo->data_conclusao?->format('Y-m-d')" />
     <x-textarea label="Observações" name="observacoes" :value="$processo->observacoes" />
 
     <div class="flex gap-3 pt-4">

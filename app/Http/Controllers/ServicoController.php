@@ -78,11 +78,6 @@ class ServicoController extends Controller
 
     public function destroy(Servico $servico): RedirectResponse
     {
-        if ($servico->processos()->exists()) {
-            return redirect()->route('servicos.index')
-                ->with('error', 'Não é possível eliminar: existem processos associados a este serviço.');
-        }
-
         $servico->delete();
 
         return redirect()->route('servicos.index')->with('success', 'Serviço eliminado com sucesso.');

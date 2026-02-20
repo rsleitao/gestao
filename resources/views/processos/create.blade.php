@@ -11,13 +11,18 @@
 <form method="post" action="{{ route('processos.store') }}" class="max-w-2xl space-y-4 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
     @csrf
 
-    <x-input label="Referência" name="referencia" required />
+    <p class="text-sm text-slate-600">Será atribuído um <strong>código único</strong> ao processo (ex.: 0014). A referência para organização é <strong>AA-NNNN</strong> (ano do trabalho + código), ex.: {{ now()->format('y') }}-0014 para trabalhos de {{ now()->year }}.</p>
+
+    <div>
+        <label for="designacao" class="mb-1 block text-sm font-medium text-slate-700">Designação</label>
+        <input type="text" name="designacao" id="designacao" value="{{ old('designacao') }}"
+            class="w-full rounded-lg border border-slate-300 px-3 py-2 shadow-sm focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500">
+        <p class="mt-1 text-xs text-slate-500">Opcional. Quando criado a partir de um negócio, será gerada automaticamente (Loja - Concelho).</p>
+        @error('designacao')
+            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+        @enderror
+    </div>
     <x-select label="Requerente" name="requerente_id" :options="$requerentes->pluck('nome', 'id')->all()" required placeholder="Selecione o requerente" />
-    <x-select label="Serviço" name="servico_id" :options="$servicos->pluck('nome', 'id')->all()" placeholder="Opcional" />
-    <x-select label="Estado" name="estado" :options="array_combine(\App\Models\Processo::ESTADOS, array_map(fn($e) => ucfirst(str_replace('_', ' ', $e)), \App\Models\Processo::ESTADOS))" required />
-    <x-input label="Data abertura" name="data_abertura" type="date" :value="old('data_abertura', now()->format('Y-m-d'))" required />
-    <x-input label="Data limite" name="data_limite" type="date" :value="old('data_limite')" />
-    <x-input label="Data conclusão" name="data_conclusao" type="date" :value="old('data_conclusao')" />
     <x-textarea label="Observações" name="observacoes" :value="old('observacoes')" />
 
     <div class="flex gap-3 pt-4">

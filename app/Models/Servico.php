@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Servico extends Model
 {
@@ -29,8 +28,4 @@ class Servico extends Model
         ];
     }
 
-    public function processos(): HasMany
-    {
-        return $this->hasMany(Processo::class);
-    }
 }
