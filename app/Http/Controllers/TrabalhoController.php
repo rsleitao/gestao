@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Loja;
 use App\Models\Negocio;
 use App\Models\NegocioItem;
 use App\Models\Trabalho;
@@ -21,10 +22,32 @@ class TrabalhoController extends Controller
 
         $trabalhosPorEstado = [];
         foreach (array_keys(Trabalho::ESTADOS) as $estado) {
-            $trabalhosPorEstado[$estado] = $trabalhos->where('estado', $estado)->values();
+            $col = $trabalhos->where('estado', $estado);
+            // Ordenar por urgência de prazo: prazos mais próximos/atrasados primeiro, sem prazo no fim
+            $trabalhosPorEstado[$estado] = $col->sortBy(function ($t) {
+                $p = $t->prazo_para_exibicao;
+                return $p ? $p->timestamp : PHP_INT_MAX;
+            })->values();
         }
 
-        return view('trabalhos.kanban', compact('trabalhosPorEstado'));
+        $tecnicosParaFiltro = $trabalhos->pluck('tecnico')->filter()->unique(fn ($u) => $u->id)->map(function ($u) {
+            $parts = preg_split('/\s+/', trim($u->name ?? ''), 2);
+            $initials = count($parts) >= 2
+                ? mb_strtoupper(mb_substr($parts[0], 0, 1) . mb_substr($parts[1], 0, 1))
+                : mb_strtoupper(mb_substr($u->name ?? '?', 0, 2));
+            return ['id' => (string) $u->id, 'name' => $u->name, 'initials' => $initials ?: '?'];
+        })->values()->all();
+        if ($trabalhos->contains(fn ($t) => !$t->id_tecnico)) {
+            $tecnicosParaFiltro[] = ['id' => 'em-aberto', 'name' => 'Em aberto', 'initials' => '—'];
+        }
+
+        $servicosParaFiltro = $trabalhos->map(fn ($t) => $t->descricao_servico)->filter()->unique()->values()->all();
+
+        $idLojasPresentes = $trabalhos->map(fn ($t) => $t->negocio->imovel->id_loja ?? null)->filter()->unique()->values();
+        $lojasParaFiltro = Loja::whereIn('id', $idLojasPresentes)->where('ativo', true)->orderBy('nome')->get(['id', 'nome']);
+        $temTrabalhosSemLoja = $trabalhos->contains(fn ($t) => !($t->negocio->imovel->id_loja ?? null));
+
+        return view('trabalhos.kanban', compact('trabalhosPorEstado', 'tecnicosParaFiltro', 'servicosParaFiltro', 'lojasParaFiltro', 'temTrabalhosSemLoja'));
     }
 
     public function store(Request $request, Negocio $negocio): RedirectResponse
