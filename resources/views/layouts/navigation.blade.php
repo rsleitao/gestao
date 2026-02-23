@@ -17,6 +17,7 @@
                             <a href="{{ route('negocios.index') }}" class="block px-4 py-2 text-sm hover:bg-slate-700">Lista de negócios</a>
                             <a href="{{ route('negocios.create') }}" class="block px-4 py-2 text-sm hover:bg-slate-700">Novo negócio</a>
                             <a href="{{ route('negocios.kanban') }}" class="block px-4 py-2 text-sm hover:bg-slate-700">Kanban negócios</a>
+                            <a href="{{ route('trabalhos.kanban') }}" class="block px-4 py-2 text-sm hover:bg-slate-700">Kanban trabalhos</a>
                         </div>
                     </div>
                     @endcan

@@ -73,6 +73,38 @@ class Negocio extends Model
         return $this->hasMany(NegocioItem::class, 'id_negocio')->orderBy('ordem');
     }
 
+    /** Trabalhos individuais do pacote (cada técnico faz um). Quando todos concluídos, o negócio passa a Concluído. */
+    public function trabalhos(): HasMany
+    {
+        return $this->hasMany(Trabalho::class, 'id_negocio')->orderBy('ordem');
+    }
+
+    /** Chat de observações dos técnicos sobre este negócio (não confundir com o campo texto observacoes). */
+    public function observacoesChat(): HasMany
+    {
+        return $this->hasMany(NegocioObservacao::class, 'id_negocio')->orderBy('created_at');
+    }
+
+    /** Todos os trabalhos do negócio estão concluídos? */
+    public function todosTrabalhosConcluidos(): bool
+    {
+        $count = $this->trabalhos()->count();
+        if ($count === 0) {
+            return false;
+        }
+        return $this->trabalhos()->where('estado', Trabalho::ESTADO_CONCLUIDO)->count() === $count;
+    }
+
+    /** Todos os trabalhos estão ainda em "A fazer"? (nenhum em execução/pendente/concluído) */
+    public function todosTrabalhosEmAFazer(): bool
+    {
+        $count = $this->trabalhos()->count();
+        if ($count === 0) {
+            return true;
+        }
+        return $this->trabalhos()->where('estado', Trabalho::ESTADO_A_FAZER)->count() === $count;
+    }
+
     /**
      * Calcula o total do negócio (soma de todos os itens).
      */

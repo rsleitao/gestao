@@ -5,9 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Loja;
 use App\Models\Processo;
 use App\Models\Requerente;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
-use Illuminate\Http\RedirectResponse;
 
 class ProcessoController extends Controller
 {

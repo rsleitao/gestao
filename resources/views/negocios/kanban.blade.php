@@ -103,7 +103,7 @@ max-w-[95vw]
             <h3 class="text-lg font-semibold text-slate-800">Estado "Em trabalho"</h3>
         </div>
         <p class="mb-6 text-sm text-slate-600">
-            O estado <strong>Em trabalho</strong> é atribuído automaticamente quando existirem trabalhos em execução associados a este negócio (futuro Kanban de trabalhos).
+            Adicione trabalhos ao negócio (em Editar negócio) e use o <strong>Kanban de trabalhos</strong> para os mover. Quando houver trabalhos, o negócio pode ficar em Em trabalho; quando todos estiverem concluídos, o negócio passará a Concluído.
         </p>
         <div class="flex justify-end">
             <button type="button" id="modal-em-trabalho-ok" class="rounded-lg bg-slate-800 px-4 py-2 text-sm text-white hover:bg-slate-700">OK</button>
@@ -123,7 +123,7 @@ max-w-[95vw]
             <h3 class="text-lg font-semibold text-slate-800">Estado "Concluído"</h3>
         </div>
         <p class="mb-6 text-sm text-slate-600">
-            O estado <strong>Concluído</strong> é atribuído automaticamente quando todos os trabalhos associados a este negócio estiverem concluídos (futuro Kanban de trabalhos).
+            O estado <strong>Concluído</strong> é atribuído automaticamente quando todos os trabalhos do negócio estiverem concluídos no Kanban de trabalhos.
         </p>
         <div class="flex justify-end">
             <button type="button" id="modal-concluido-ok" class="rounded-lg bg-slate-800 px-4 py-2 text-sm text-white hover:bg-slate-700">OK</button>

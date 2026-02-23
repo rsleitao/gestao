@@ -10,6 +10,7 @@ use App\Http\Controllers\NegocioController;
 use App\Http\Controllers\NegocioItemController;
 use App\Http\Controllers\ProcessoController;
 use App\Http\Controllers\PermissionController;
+use App\Http\Controllers\TrabalhoController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RequerenteController;
 use App\Http\Controllers\UserController;
@@ -35,6 +36,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('negocios/{negocio}/itens', [NegocioItemController::class, 'store'])->name('negocios.itens.store');
         Route::put('negocios/{negocio}/itens/{item}', [NegocioItemController::class, 'update'])->name('negocios.itens.update');
         Route::delete('negocios/{negocio}/itens/{item}', [NegocioItemController::class, 'destroy'])->name('negocios.itens.destroy');
+        Route::get('trabalhos-kanban', [TrabalhoController::class, 'kanban'])->name('trabalhos.kanban');
+        Route::put('trabalhos/{trabalho}/estado', [TrabalhoController::class, 'updateEstado'])->name('trabalhos.update-estado');
+        Route::put('trabalhos/{trabalho}/tecnico', [TrabalhoController::class, 'updateTecnico'])->name('trabalhos.update-tecnico');
+        Route::post('negocios/{negocio}/trabalhos', [TrabalhoController::class, 'store'])->name('negocios.trabalhos.store');
+        Route::delete('negocios/{negocio}/trabalhos/{trabalho}', [TrabalhoController::class, 'destroy'])->name('negocios.trabalhos.destroy');
+        Route::get('negocios/{negocio}/modal-trabalhos', [NegocioController::class, 'modalTrabalhos'])->name('negocios.modal-trabalhos');
+        Route::post('negocios/{negocio}/observacoes', [NegocioController::class, 'storeObservacao'])->name('negocios.observacoes.store');
     });
 
     Route::middleware('can:access-projetos')->group(function () {

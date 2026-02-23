@@ -8,6 +8,7 @@ use App\Models\Freguesia;
 use App\Models\Imovel;
 use App\Models\Loja;
 use App\Models\Negocio;
+use App\Models\NegocioObservacao;
 use App\Models\Processo;
 use App\Models\Requerente;
 use App\Models\Servico;
@@ -127,6 +128,33 @@ class NegocioController extends Controller
                 $negocio->update([
                     'status' => 'aceite',
                     'data_convertido' => $negocio->data_convertido ?? now(),
+                ]);
+            }
+            // Um trabalho por item do negócio (card = dados do item + designação negócio + técnico em aberto).
+            $itens = $negocio->itens()->orderBy('ordem')->orderBy('id')->get();
+            $idsItemComTrabalho = $negocio->trabalhos()->whereNotNull('id_negocio_item')->pluck('id_negocio_item')->toArray();
+            $ordem = (int) $negocio->trabalhos()->max('ordem');
+            if ($itens->isNotEmpty()) {
+                foreach ($itens as $item) {
+                    if (in_array((int) $item->id, $idsItemComTrabalho, true)) {
+                        continue;
+                    }
+                    $ordem++;
+                    \App\Models\Trabalho::create([
+                        'id_negocio' => $negocio->id,
+                        'id_negocio_item' => $item->id,
+                        'estado' => \App\Models\Trabalho::ESTADO_A_FAZER,
+                        'ordem' => $ordem,
+                    ]);
+                }
+            }
+            // Se não há itens e não há trabalhos, criar um trabalho genérico para o negócio aparecer no Kanban
+            if ($negocio->trabalhos()->count() === 0) {
+                \App\Models\Trabalho::create([
+                    'id_negocio' => $negocio->id,
+                    'designacao' => $negocio->designacao,
+                    'estado' => \App\Models\Trabalho::ESTADO_A_FAZER,
+                    'ordem' => 1,
                 ]);
             }
         } else {
@@ -269,11 +297,12 @@ class NegocioController extends Controller
 
     public function edit(Negocio $negocio): View
     {
-        $negocio->load('itens'); // Carregar itens para evitar N+1
+        $negocio->load(['itens', 'trabalhos.tecnico', 'trabalhos.servico', 'trabalhos.negocioItem']);
         $requerentes = Requerente::orderBy('nome')->get();
         $imoveis = Imovel::orderBy('morada')->get();
         $servicos = Servico::where('ativo', true)->orderBy('nome')->get();
-        return view('negocios.edit', compact('negocio', 'requerentes', 'imoveis', 'servicos'));
+        $tecnicos = \App\Models\User::where('ativo', true)->orderBy('name')->get();
+        return view('negocios.edit', compact('negocio', 'requerentes', 'imoveis', 'servicos', 'tecnicos'));
     }
 
     public function update(Request $request, Negocio $negocio): RedirectResponse
@@ -306,5 +335,72 @@ class NegocioController extends Controller
     {
         $negocio->delete();
         return redirect()->route('negocios.index')->with('success', 'Negócio eliminado com sucesso.');
+    }
+
+    /** Dados para o modal de trabalhos do negócio (tabela + observações). */
+    public function modalTrabalhos(Negocio $negocio): JsonResponse
+    {
+        $negocio->load([
+            'processo',
+            'trabalhos.negocioItem',
+            'trabalhos.negocio.itens',
+            'trabalhos.tecnico',
+            'observacoesChat.user',
+        ]);
+
+        $trabalhosCollection = $negocio->trabalhos ?? collect();
+        $tecnicos = \App\Models\User::where('ativo', true)->orderBy('name')->get(['id', 'name']);
+
+        $trabalhos = $trabalhosCollection->map(function ($t) {
+            return [
+                'id' => $t->id,
+                'servico' => $t->descricao_servico ?? '—',
+                'tipo' => $t->tipo_trabalho_para_exibicao ?? '—',
+                'prazo' => $t->prazo_para_exibicao ? $t->prazo_para_exibicao->format('d/m/Y') : '—',
+                'id_tecnico' => $t->id_tecnico,
+                'tecnico' => $t->tecnico ? $t->tecnico->name : 'Em aberto',
+                'estado' => \App\Models\Trabalho::ESTADOS[$t->estado] ?? $t->estado,
+            ];
+        });
+
+        $tecnicosList = $tecnicos->map(fn ($u) => ['id' => $u->id, 'name' => $u->name])->values()->all();
+
+        $observacoesCollection = $negocio->observacoesChat ?? collect();
+        $observacoes = $observacoesCollection->map(fn ($o) => [
+            'id' => $o->id,
+            'user_name' => $o->user->name ?? '—',
+            'observacao' => $o->observacao,
+            'created_at' => $o->created_at->format('d/m/Y H:i'),
+        ])->values()->all();
+
+        $titulo = $negocio->processo
+            ? ($negocio->processo->referencia . ($negocio->processo->designacao ? ' - ' . $negocio->processo->designacao : ''))
+            : ($negocio->designacao ?? 'Negócio');
+
+        return response()->json([
+            'titulo' => $titulo,
+            'tecnicos' => $tecnicosList,
+            'trabalhos' => $trabalhos->values()->all(),
+            'observacoes' => $observacoes,
+        ]);
+    }
+
+    /** Guardar nova observação no chat do negócio. */
+    public function storeObservacao(Request $request, Negocio $negocio): JsonResponse
+    {
+        $validated = $request->validate(['observacao' => 'required|string|max:5000']);
+
+        $obs = $negocio->observacoesChat()->create([
+            'id_user' => $request->user()->id,
+            'observacao' => $validated['observacao'],
+        ]);
+        $obs->load('user');
+
+        return response()->json([
+            'id' => $obs->id,
+            'user_name' => $obs->user->name,
+            'observacao' => $obs->observacao,
+            'created_at' => $obs->created_at->format('d/m/Y H:i'),
+        ]);
     }
 }

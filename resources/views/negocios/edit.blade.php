@@ -147,6 +147,86 @@
     </div>
 </div>
 
+{{-- Trabalhos do pacote (cada técnico faz um; quando todos concluídos, o negócio passa a Concluído) --}}
+<div class="mt-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+    <div class="mb-4 flex items-center justify-between">
+        <h2 class="text-lg font-semibold text-slate-800">Trabalhos do pacote</h2>
+        <a href="{{ route('trabalhos.kanban') }}" class="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">Ver Kanban trabalhos</a>
+    </div>
+    <p class="mb-4 text-sm text-slate-600">Cada trabalho é executado por um técnico. Quando todos estiverem concluídos, o negócio aparece na coluna Concluído do Kanban de negócios.</p>
+
+    @if($negocio->trabalhos->count() > 0)
+        <div class="mb-4 overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200">
+                <thead class="bg-slate-50">
+                    <tr>
+                        <th class="px-4 py-2 text-left text-xs font-medium uppercase text-slate-600">Designação</th>
+                        <th class="px-4 py-2 text-left text-xs font-medium uppercase text-slate-600">Descrição (item)</th>
+                        <th class="px-4 py-2 text-left text-xs font-medium uppercase text-slate-600">Tipo</th>
+                        <th class="px-4 py-2 text-left text-xs font-medium uppercase text-slate-600">Prazo</th>
+                        <th class="px-4 py-2 text-left text-xs font-medium uppercase text-slate-600">Técnico</th>
+                        <th class="px-4 py-2 text-left text-xs font-medium uppercase text-slate-600">Estado</th>
+                        <th class="px-4 py-2 text-right text-xs font-medium uppercase text-slate-600">Ações</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-200 bg-white">
+                    @foreach($negocio->trabalhos as $t)
+                        <tr class="hover:bg-slate-50">
+                            <td class="px-4 py-2 font-medium text-slate-800">{{ $t->designacao_negocio ?? '—' }}</td>
+                            <td class="px-4 py-2 text-slate-700">{{ $t->descricao_servico ?? '—' }}</td>
+                            <td class="px-4 py-2 text-slate-600">@if($t->tipo_trabalho_para_exibicao)<span class="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">{{ $t->tipo_trabalho_para_exibicao }}</span>@else — @endif</td>
+                            <td class="px-4 py-2 text-slate-600">{{ $t->prazo_para_exibicao ? $t->prazo_para_exibicao->format('d/m/Y') : '—' }}</td>
+                            <td class="px-4 py-2 text-slate-600">{{ $t->tecnico->name ?? 'Em aberto' }}</td>
+                            <td class="px-4 py-2">
+                                <span class="rounded-full px-2 py-0.5 text-xs font-medium {{ $t->estado === 'concluido' ? 'bg-slate-200 text-slate-800' : ($t->estado === 'em_execucao' ? 'bg-blue-100 text-blue-800' : ($t->estado === 'pendente' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800')) }}">{{ \App\Models\Trabalho::ESTADOS[$t->estado] ?? $t->estado }}</span>
+                            </td>
+                            <td class="px-4 py-2 text-right">
+                                <form method="post" action="{{ route('negocios.trabalhos.destroy', [$negocio, $t]) }}" class="inline" onsubmit="return confirm('Remover este trabalho do pacote?');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="text-red-600 hover:text-red-800 text-sm">Remover</button>
+                                </form>
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    @else
+        <p class="mb-4 text-sm text-slate-500">Ainda não há trabalhos. Adicione abaixo para que cada técnico possa executar um.</p>
+    @endif
+
+    @php $itensSemTrabalho = $negocio->itens->filter(fn($item) => !$negocio->trabalhos->pluck('id_negocio_item')->contains($item->id)); @endphp
+    @if($itensSemTrabalho->isNotEmpty())
+    <form method="post" action="{{ route('negocios.trabalhos.store', $negocio) }}" class="flex flex-wrap items-end gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
+        @csrf
+        <div class="min-w-[280px]">
+            <label for="trabalho-item" class="mb-1 block text-sm font-medium text-slate-700">Item do negócio <span class="text-red-500">*</span></label>
+            <select name="id_negocio_item" id="trabalho-item" class="w-full rounded-lg border border-slate-300 px-3 py-2 shadow-sm focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500" required>
+                <option value="">— Escolher item —</option>
+                @foreach($itensSemTrabalho as $item)
+                    <option value="{{ $item->id }}">{{ Str::limit($item->descricao, 55) }} @if($item->tipo_trabalho)({{ \App\Models\NegocioItem::TIPOS_TRABALHO[$item->tipo_trabalho] ?? $item->tipo_trabalho }})@endif</option>
+                @endforeach
+            </select>
+            <p class="mt-0.5 text-xs text-slate-500">O card do trabalho usa a descrição, tipo e prazo deste item + designação do negócio.</p>
+        </div>
+        <div class="min-w-[180px]">
+            <label for="trabalho-tecnico" class="mb-1 block text-sm font-medium text-slate-700">Técnico</label>
+            <select name="id_tecnico" id="trabalho-tecnico" class="w-full rounded-lg border border-slate-300 px-3 py-2 shadow-sm focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500">
+                <option value="">Em aberto</option>
+                @foreach($tecnicos as $u)
+                    <option value="{{ $u->id }}">{{ $u->name }}</option>
+                @endforeach
+            </select>
+            <p class="mt-0.5 text-xs text-slate-500">Inicialmente em aberto; pode atribuir depois.</p>
+        </div>
+        <button type="submit" class="rounded-lg bg-slate-800 px-4 py-2 text-sm text-white hover:bg-slate-700">+ Adicionar trabalho</button>
+    </form>
+    @else
+        <p class="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">Todos os itens do negócio já têm um trabalho associado. Adicione mais itens acima para criar novos trabalhos.</p>
+    @endif
+</div>
+
 {{-- Modal para escolher tipo de trabalho --}}
 <div id="modal-tipo-trabalho" class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-50">
     <div class="mx-4 w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
