@@ -21,17 +21,16 @@ return new class extends Migration
             $concelhosMap[$index + 1] = $concelho->id;
         }
 
-        // Carregar dados das freguesias do arquivo gerado
+        // Carregar dados das freguesias do arquivo gerado (opcional: se não existir, tabela fica vazia)
         $dataFile = base_path('freguesias_data.php');
         if (!file_exists($dataFile)) {
-            throw new \Exception("Arquivo freguesias_data.php não encontrado em: {$dataFile}");
+            return;
         }
-        
-        // Incluir o arquivo de dados
+
         require $dataFile;
-        
+
         if (!isset($freguesiasData) || !is_array($freguesiasData)) {
-            throw new \Exception("Variável \$freguesiasData não encontrada ou inválida no arquivo de dados");
+            return;
         }
 
         // Processar e inserir freguesias em lotes
