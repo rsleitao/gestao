@@ -36,8 +36,9 @@ class DashboardController extends Controller
             ->limit(10)
             ->get();
 
-        // Prazos para o calendário: trabalhos do utilizador (não concluídos) com prazo nos próximos 60 dias
+        // Prazos para o calendário: trabalhos do utilizador (não concluídos) com prazo — inclui atrasados (até 60 dias atrás) e próximos (até 60 dias à frente)
         $hoje = Carbon::today();
+        $inicioPeriodo = $hoje->copy()->subDays(60);
         $fimPeriodo = $hoje->copy()->addDays(60);
         $prazosPorDia = [];
         if ($user) {
@@ -45,7 +46,7 @@ class DashboardController extends Controller
                 ->where('estado', '!=', Trabalho::ESTADO_CONCLUIDO)
                 ->with(['negocio', 'negocioItem'])
                 ->get()
-                ->filter(fn (Trabalho $t) => $t->prazo_para_exibicao && $t->prazo_para_exibicao->between($hoje, $fimPeriodo));
+                ->filter(fn (Trabalho $t) => $t->prazo_para_exibicao && $t->prazo_para_exibicao->between($inicioPeriodo, $fimPeriodo));
             foreach ($trabalhosComPrazo as $t) {
                 $key = $t->prazo_para_exibicao->format('Y-m-d');
                 if (!isset($prazosPorDia[$key])) {

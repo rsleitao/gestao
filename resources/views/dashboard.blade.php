@@ -171,8 +171,11 @@
                             }
                         }
                     @endphp
-                    <script>window.dashboardCalendarPrazos = @json($calendarPrazosData);</script>
-                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg" x-data="dashboardCalendar(window.dashboardCalendarPrazos || {})">
+                    <script>
+                        window.dashboardCalendarPrazos = @json($calendarPrazosData);
+                        window.dashboardCalendarToday = @json($hoje->format('Y-m-d'));
+                    </script>
+                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg" x-data="dashboardCalendar(window.dashboardCalendarPrazos || {}, window.dashboardCalendarToday || '')">
                         <div class="px-4 py-3 border-b border-slate-200 flex items-center justify-between gap-2">
                             <button type="button" class="rounded p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700" @click="prevMonth()" aria-label="Mês anterior">←</button>
                             <h2 class="text-base font-semibold text-slate-800" x-text="monthLabel"></h2>
@@ -188,13 +191,14 @@
                                         class="relative p-1 rounded min-h-[1.5rem] flex items-center justify-center"
                                         :class="{
                                             'text-slate-300': day.isOtherMonth,
-                                            'bg-slate-100': day.isWeekend && !day.isOtherMonth && !day.isToday && !day.hasPrazo,
+                                            'bg-slate-100': day.isWeekend && !day.isOtherMonth && !day.isToday && !day.hasPrazo && !day.isOverdue,
                                             'bg-slate-200': day.isWeekend && day.isOtherMonth,
+                                            'bg-red-100 text-red-900 cursor-pointer hover:bg-red-200': day.isOverdue && !day.isOtherMonth,
                                             'bg-sky-100 font-semibold text-sky-800': day.isToday && !day.isOtherMonth,
-                                            'bg-amber-100 text-amber-900 cursor-pointer hover:bg-amber-200': day.hasPrazo && !day.isOtherMonth,
-                                            'text-slate-600': !day.isOtherMonth && !day.isToday && !day.hasPrazo
+                                            'bg-amber-100 text-amber-900 cursor-pointer hover:bg-amber-200': day.hasPrazo && !day.isOverdue && !day.isOtherMonth,
+                                            'text-slate-600': !day.isOtherMonth && !day.isToday && !day.hasPrazo && !day.isOverdue
                                         }"
-                                        :title="day.hasPrazo ? (day.count + (day.count === 1 ? ' trabalho para entregar' : ' trabalhos para entregar')) : ''"
+                                        :title="day.hasPrazo ? (day.isOverdue ? (day.count + (day.count === 1 ? ' trabalho em atraso' : ' trabalhos em atraso')) : (day.count + (day.count === 1 ? ' trabalho para entregar' : ' trabalhos para entregar'))) : ''"
                                         @click="day.hasPrazo && openModal(day.dateKey, day.dateLabel)"
                                     >
                                         <span x-text="day.day"></span>
@@ -202,7 +206,7 @@
                                     </div>
                                 </template>
                             </div>
-                            <p class="mt-2 text-xs text-slate-500">Dias a amarelo têm prazos (passe o rato; clique para ver). Azul é hoje.</p>
+                            <p class="mt-2 text-xs text-slate-500">Vermelho = atrasados; amarelo = prazos; azul = hoje (passe o rato; clique para ver).</p>
                         </div>
                         {{-- Modal: trabalhos do dia --}}
                         <div x-show="modalOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" @click.self="modalOpen = false">
@@ -232,10 +236,11 @@
     @push('scripts')
     <script>
         var MESES_PT = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-        function dashboardCalendar(prazosData) {
+        function dashboardCalendar(prazosData, todayKey) {
             var hoje = new Date();
             return {
                 prazosData: prazosData || {},
+                todayKey: todayKey || (hoje.getFullYear() + '-' + String(hoje.getMonth() + 1).padStart(2, '0') + '-' + String(hoje.getDate()).padStart(2, '0')),
                 currentMonth: { year: hoje.getFullYear(), month: hoje.getMonth() },
                 modalOpen: false,
                 modalDate: null,
@@ -286,6 +291,7 @@
                             isOtherMonth: d.getMonth() !== m,
                             isWeekend: dayOfWeek === 0 || dayOfWeek === 6,
                             hasPrazo: prazos.length > 0,
+                            isOverdue: prazos.length > 0 && dateKey < this.todayKey,
                             count: prazos.length
                         });
                         d.setDate(d.getDate() + 1);
